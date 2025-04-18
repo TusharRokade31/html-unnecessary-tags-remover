@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Tag Remover</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        select, input {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+        .checkbox-container input {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTML Tag Remover</h1>
+    <p>Paste your HTML code below and select which tags to remove.</p>
+    
+    <textarea id="inputHtml" placeholder="Paste your HTML code here..."></textarea>
+    
+    <div class="control-panel">
+        <select id="tagSelector">
+            <option value="span">span</option>
+            <option value="div">div</option>
+            <option value="p">p</option>
+            <option value="b">b</option>
+            <option value="i">i</option>
+            <option value="strong">strong</option>
+            <option value="em">em</option>
+            <option value="a">a</option>
+        </select>
+        
+        <input type="text" id="customTag" placeholder="Or enter custom tag">
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="removeNbsp" checked>
+            <label for="removeNbsp">Remove &amp;nbsp;</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="removeEmptyP" checked>
+            <label for="removeEmptyP">Remove &lt;p&gt;&amp;nbsp;&lt;/p&gt;</label>
+        </div>
+    </div>
+    
+    <button onclick="removeTags()">Remove Selected Tag</button>
+    <button onclick="removeSpanTags()">Remove Span Tags</button>
+    <button onclick="removeEmptyPTags()">Remove Empty P Tags</button>
+    <button onclick="copyToClipboard()">Copy Result</button>
+    
+    <h3>Result:</h3>
+    <div id="output">Processed HTML will appear here...</div>
+    
+    <script>
+        function removeTags() {
+            const input = document.getElementById('inputHtml').value;
+            const output = document.getElementById('output');
+            const selectedTag = document.getElementById('tagSelector').value;
+            const customTag = document.getElementById('customTag').value.trim();
+            const removeNbsp = document.getElementById('removeNbsp').checked;
+            const removeEmptyP = document.getElementById('removeEmptyP').checked;
+            
+            const tagToRemove = customTag || selectedTag;
+            
+            if (!input.trim()) {
+                output.textContent = "Please enter some HTML code first.";
+                return;
+            }
+            
+            try {
+                // Create a temporary container for the HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = input;
+                
+                // Find all instances of the specified tag
+                const tags = tempDiv.querySelectorAll(tagToRemove);
+                
+                // Replace each tag with its content
+                tags.forEach(tag => {
+                    // Create a document fragment to hold the tag's contents
+                    const fragment = document.createDocumentFragment();
+                    
+                    // Move all the tag's children to the fragment
+                    while (tag.firstChild) {
+                        fragment.appendChild(tag.firstChild);
+                    }
+                    
+                    // Replace the tag with the fragment
+                    tag.parentNode.replaceChild(fragment, tag);
+                });
+                
+                // Get the resulting HTML
+                let result = tempDiv.innerHTML;
+                
+                // Remove &nbsp; if checked
+                if (removeNbsp) {
+                    result = result.replaceAll('&nbsp;', ' ');
+                }
+                
+                // Remove <p>&nbsp;</p> patterns if checked
+                if (removeEmptyP) {
+                    result = result.replaceAll(/<p>\s*(&nbsp;|\s)\s*<\/p>/gi, '');
+                }
+                
+                output.textContent = result;
+            } catch (error) {
+                output.textContent = "Error processing HTML: " + error.message;
+            }
+        }
+        
+        function removeSpanTags() {
+            // Set the selector to span and call removeTags
+            document.getElementById('tagSelector').value = 'span';
+            document.getElementById('customTag').value = '';
+            removeTags();
+        }
+        
+        function removeEmptyPTags() {
+            const input = document.getElementById('inputHtml').value;
+            const output = document.getElementById('output');
+            
+            if (!input.trim()) {
+                output.textContent = "Please enter some HTML code first.";
+                return;
+            }
+            
+            try {
+                // Specifically remove <p>&nbsp;</p> patterns using regex
+                let result = input.replaceAll(/<p>\s*(&nbsp;|\s)\s*<\/p>/gi, '');
+                output.textContent = result;
+            } catch (error) {
+                output.textContent = "Error processing HTML: " + error.message;
+            }
+        }
+        
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            const text = output.textContent;
+            
+            if (text === "Processed HTML will appear here..." || 
+                text === "Please enter some HTML code first." ||
+                text.startsWith("Error processing HTML:")) {
+                alert("No processed HTML to copy.");
+                return;
+            }
+            
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert("HTML copied to clipboard!");
+                })
+                .catch(err => {
+                    alert("Failed to copy: " + err);
+                });
+        }
+    </script>
+</body>
+</html>
